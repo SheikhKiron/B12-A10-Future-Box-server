@@ -29,12 +29,39 @@ async function run() {
     const eventCollection = event.collection('events');
 
 
-    app.get('/events', async (req, res) => {
-        const cursor = eventCollection.find();
-      const result = await cursor.toArray();
-      res.send(result)
+    // app.get('/events', async (req, res) => {
+    //     const cursor = eventCollection.find();
+    //   const result = await cursor.toArray();
+    //   res.send(result)
 
-    })
+    // })
+
+  app.get('/events', async (req, res) => {
+    try {
+      const { search, category } = req.query;
+      const query = {};
+
+      
+      if (search) {
+        query.title = { $regex: search, $options: 'i' }; 
+      }
+
+
+      if (category) {
+        query.eventType = category;
+      }
+
+      const result = await eventCollection
+        .find(query)
+        .sort({ eventDate: 1 })
+        .toArray();
+      res.send(result);
+    } catch (err) {
+      console.error(err);
+      res.status(500).send({ message: 'Server error' });
+    }
+  });
+
     app.get('/events/:id', async (req, res) => {
       const id = req.params.id;
       const event={_id:new ObjectId(id)}
@@ -66,6 +93,15 @@ async function run() {
       res.send(event)
       
     });
+
+        app.get('/search', async (req, res) => {
+          const search = req.query.search;
+          const result = await eventCollection
+            .find({ title: { $regex: search, $options: 'i' } })
+            .toArray();
+          res.send(result);
+        });
+
 
     app.delete('/events/:id', async (req, res) => {
       const id = req.params.id;
