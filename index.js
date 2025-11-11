@@ -51,13 +51,46 @@ async function run() {
       res.send(result)
     })
 
+    app.get('/events/join/:email', async (req, res) => {
+      const email = req.params.email;
+      const event = await eventCollection.find({"joinedUsers.email":email}).sort({ eventDate: 1 }).toArray()
+      res.send(event)
+      
+    });
+    app.get('/events/created/:email', async (req, res) => {
+      const email = req.params.email;
+      const event = await eventCollection
+        .find({ createdByEmail: email })
+        .sort({ eventDate: 1 })
+        .toArray();
+      res.send(event)
+      
+    });
+
+    app.delete('/events/:id', async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: new ObjectId(id) }
+      const result = await eventCollection.deleteOne(query)
+      res.send(result)
+      
+     })
+    app.patch('/events/:id', async (req, res) => {
+          const id = req.params.id;
+          const query = { _id: new ObjectId(id) };
+          const update = { $set: req.body };
+          const options = {};
+          const result = await products.updateOne(query, update, options);
+          res.send(result);
+      
+     })
+
     app.post('/events/join/:id', async (req, res) => {
       const id = req.params.id;
       const user = req.body;
        try {
          await eventCollection.updateOne(
            { _id: new ObjectId(id) },
-           { $push: { joinedUsers: user } }
+           {$addToSet: { joinedUsers: user } }
          );
 
          res.send({ success: true, message: 'Joined successfully' });
@@ -66,6 +99,22 @@ async function run() {
        }
 
     })
+
+    app.delete('/events/join/:id', async (req, res) => {
+      const id = req.params.id;
+      const { email } = req.body; 
+      try {
+        const result = await eventCollection.updateOne(
+          { _id: new ObjectId(id) },
+          { $pull: { joinedUsers: { email } } }
+        );
+        res.send({ success: result.modifiedCount > 0 });
+      }
+      catch (err) {
+        console.error(err);
+        res.status(500).send({ success: false, message: 'Server error' });
+      }
+    });
 
     // Send a ping to confirm a successful connection
     await client.db('admin').command({ ping: 1 });
