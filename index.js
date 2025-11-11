@@ -79,7 +79,7 @@ async function run() {
           const query = { _id: new ObjectId(id) };
           const update = { $set: req.body };
           const options = {};
-          const result = await products.updateOne(query, update, options);
+          const result = await eventCollection.updateOne(query, update, options);
           res.send(result);
       
      })
