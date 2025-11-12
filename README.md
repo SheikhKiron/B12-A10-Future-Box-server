@@ -21,12 +21,3 @@ CORS and JSON middleware enabled
 
 Node.js | Express.js | MongoDB | Firebase Admin | Vercel
 
-🔗 Main APIs
-
-GET /events → All upcoming events
-
-POST /events → Create event (protected)
-
-PATCH /events/:id → Update event
-
-POST /events/join/:id → Join event (protected)
