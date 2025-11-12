@@ -6,6 +6,35 @@ const port =process.env.PORT|| 3000;
 app.use(cors())
 app.use(express.json())
 
+const admin = require("firebase-admin");
+
+const serviceAccount = require("./future-box-firebase-adminsdk.json");
+
+admin.initializeApp({
+  credential: admin.credential.cert(serviceAccount)
+});
+
+const verifyToken = async (req, res, next) => {
+  console.log('I am from middleware');
+  const authorization = req.headers.authorization;
+  if (!authorization) {
+    return res.status(401).send({
+      message: 'unauthorised access',
+    });
+  }
+  const token = authorization.split(' ')[1];
+  console.log(token);
+  try {
+    await admin.auth().verifyIdToken(token);
+    next();
+  } catch (error) {
+    res.status(401).send({
+      message: 'unauthorised access',
+    });
+  }
+};
+
+
 const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASSWORD}@cluster0.2gqzmaz.mongodb.net/?appName=Cluster0`;
 // Create a MongoClient with a MongoClientOptions object to set the Stable API version
@@ -72,7 +101,7 @@ async function run() {
 
     })
 
-    app.post('/events', async (req, res) => {
+    app.post('/events',verifyToken, async (req, res) => {
     
       const event = req.body
       const result = await eventCollection.insertOne(event);
@@ -104,7 +133,7 @@ async function run() {
         });
 
 
-    app.delete('/events/:id', async (req, res) => {
+    app.delete('/events/:id',verifyToken, async (req, res) => {
       const id = req.params.id;
       const query = { _id: new ObjectId(id) }
       const result = await eventCollection.deleteOne(query)
